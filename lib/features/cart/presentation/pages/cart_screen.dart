@@ -74,9 +74,12 @@ class _CartScreenState extends State<CartScreen> {
                     ],
                   ),
                 ),
-                FilledButton(
-                  onPressed: () => _openCheckout(context),
-                  child: const Text('Checkout'),
+                SizedBox(
+                  width: 140,
+                  child: FilledButton(
+                    onPressed: () => _openCheckout(context),
+                    child: const Text('Checkout'),
+                  ),
                 ),
               ],
             ),
