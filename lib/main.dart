@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/di/injection_container.dart' as di;
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/cubit/auth_cubit.dart';
-import 'features/auth/presentation/pages/login_page.dart';
+import 'features/auth/presentation/pages/login_screen.dart';
 import 'features/products/presentation/cubit/product_cubit.dart';
 import 'features/products/presentation/pages/product_list_page.dart';
 
@@ -54,7 +54,7 @@ class _RootGate extends StatelessWidget {
             return const ProductListPage();
           case AuthStatus.unauthenticated:
           case AuthStatus.failure:
-            return const LoginPage();
+            return const LoginScreen();
         }
       },
     );
