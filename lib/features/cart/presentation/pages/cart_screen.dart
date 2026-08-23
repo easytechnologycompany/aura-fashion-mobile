@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection_container.dart' as di;
+import '../../../home/presentation/pages/home_screen.dart';
 import '../../../orders/presentation/cubit/checkout_cubit.dart';
 import '../cubit/cart_cubit.dart';
 import '../widgets/cart_item_tile.dart';
@@ -17,7 +18,15 @@ class _CartScreenState extends State<CartScreen> {
   @override
   void initState() {
     super.initState();
-    context.read<CartCubit>().loadCart();
+    // CartCubit is an app-wide singleton kept in sync by every add/update/
+    // remove call, so its in-memory state is already current by the time
+    // this screen opens (HomeScreen loads it once at startup). Only hit
+    // disk here if that hasn't happened yet — reloading unconditionally
+    // would flash a loading spinner over already-fresh data on every open,
+    // which is what made the cart look like it wasn't updating instantly.
+    if (context.read<CartCubit>().state.status == CartStatus.initial) {
+      context.read<CartCubit>().loadCart();
+    }
   }
 
   @override
@@ -30,20 +39,7 @@ class _CartScreenState extends State<CartScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (state.items.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.shopping_cart_outlined,
-                    size: 48,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(height: 12),
-                  const Text('Your cart is empty'),
-                ],
-              ),
-            );
+            return const _EmptyCartView();
           }
           return ListView.separated(
             padding: const EdgeInsets.symmetric(vertical: 12),
@@ -62,6 +58,7 @@ class _CartScreenState extends State<CartScreen> {
               children: [
                 Expanded(
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
@@ -97,6 +94,59 @@ class _CartScreenState extends State<CartScreen> {
       builder: (sheetContext) => BlocProvider(
         create: (_) => di.sl<CheckoutCubit>(),
         child: _CheckoutSheet(cartCubit: cartCubit),
+      ),
+    );
+  }
+}
+
+class _EmptyCartView extends StatelessWidget {
+  const _EmptyCartView();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.shopping_bag_outlined,
+              size: 72,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Your cart is empty',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Looks like you haven't added anything yet. "
+              'Start browsing to find something you love.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: () {
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                } else {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (_) => const HomeScreen()),
+                  );
+                }
+              },
+              icon: const Icon(Icons.storefront_outlined),
+              label: const Text('Browse Products'),
+            ),
+          ],
+        ),
       ),
     );
   }
