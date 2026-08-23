@@ -16,4 +16,11 @@ abstract class OrderRepository {
     required String shippingAddress,
     String? paymentMethod,
   });
+
+  Future<Either<Failure, OrderEntity>> getOrder(String id);
+
+  Future<Either<Failure, List<OrderEntity>>> listOrders({
+    int offset = 0,
+    int limit = 20,
+  });
 }

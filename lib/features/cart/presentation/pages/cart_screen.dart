@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/di/injection_container.dart' as di;
 import '../../../home/presentation/pages/home_screen.dart';
 import '../../../orders/presentation/cubit/checkout_cubit.dart';
+import '../../../orders/presentation/pages/order_tracking_screen.dart';
 import '../cubit/cart_cubit.dart';
 import '../widgets/cart_item_tile.dart';
 
@@ -226,10 +227,22 @@ class _CheckoutSheetState extends State<_CheckoutSheet> {
         listener: (context, state) {
           if (state.status == CheckoutStatus.success) {
             widget.cartCubit.clear();
-            Navigator.of(context).pop();
-            ScaffoldMessenger.of(context).showSnackBar(
+            final orderId = state.order!.id;
+            // Capture the State objects (not the sheet's BuildContext) since
+            // the sheet is popped below and its context becomes invalid
+            // before the user gets a chance to tap the snackbar's action.
+            final navigator = Navigator.of(context);
+            final messenger = ScaffoldMessenger.of(context);
+            navigator.pop();
+            messenger.showSnackBar(
               SnackBar(
                 content: Text('Order placed! Total \$${state.order!.total.toStringAsFixed(2)}'),
+                action: SnackBarAction(
+                  label: 'Track',
+                  onPressed: () => navigator.push(
+                    MaterialPageRoute(builder: (_) => OrderTrackingScreen(orderId: orderId)),
+                  ),
+                ),
               ),
             );
           } else if (state.status == CheckoutStatus.failure) {

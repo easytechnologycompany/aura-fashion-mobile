@@ -11,6 +11,10 @@ abstract class OrderRemoteDataSource {
     required String shippingAddress,
     String? paymentMethod,
   });
+
+  Future<OrderModel> getOrder(String id);
+
+  Future<List<OrderModel>> listOrders({int offset = 0, int limit = 20});
 }
 
 class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
@@ -36,6 +40,32 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
         },
       );
       return OrderModel.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw ServerException(_extractMessage(e));
+    }
+  }
+
+  @override
+  Future<OrderModel> getOrder(String id) async {
+    try {
+      final response = await dio.get(ApiConstants.order(id));
+      return OrderModel.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw ServerException(_extractMessage(e));
+    }
+  }
+
+  @override
+  Future<List<OrderModel>> listOrders({int offset = 0, int limit = 20}) async {
+    try {
+      final response = await dio.get(
+        ApiConstants.orders,
+        queryParameters: {'offset': offset, 'limit': limit},
+      );
+      final data = (response.data as Map<String, dynamic>)['data'] as List<dynamic>;
+      return data
+          .map((o) => OrderModel.fromJson(o as Map<String, dynamic>))
+          .toList();
     } on DioException catch (e) {
       throw ServerException(_extractMessage(e));
     }

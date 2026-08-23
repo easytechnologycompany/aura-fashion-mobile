@@ -10,6 +10,8 @@ import '../../../wishlist/presentation/widgets/wishlist_button.dart';
 import '../../domain/entities/product_entity.dart';
 import '../../domain/entities/product_variant_entity.dart';
 import '../cubit/product_detail_cubit.dart';
+import '../widgets/recommended_products_section.dart';
+import '../widgets/size_guide_sheet.dart';
 
 class ProductDetailScreen extends StatelessWidget {
   final String productId;
@@ -333,7 +335,16 @@ class _DetailBody extends StatelessWidget {
                 ),
                 if (product.availableSizes.isNotEmpty) ...[
                   const SizedBox(height: 20),
-                  Text('Size', style: Theme.of(context).textTheme.titleMedium),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Size', style: Theme.of(context).textTheme.titleMedium),
+                      TextButton(
+                        onPressed: () => showSizeGuide(context),
+                        child: const Text('Size Guide'),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
@@ -373,6 +384,11 @@ class _DetailBody extends StatelessWidget {
                       ? product.description
                       : 'No description available.',
                   style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 24),
+                RecommendedProductsSection(
+                  categoryId: product.categoryId,
+                  currentProductId: product.id,
                 ),
                 const SizedBox(height: 100),
               ],

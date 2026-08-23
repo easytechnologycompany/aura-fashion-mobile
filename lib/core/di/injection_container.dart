@@ -45,7 +45,11 @@ import '../../features/orders/data/datasources/order_remote_data_source.dart';
 import '../../features/orders/data/repositories/order_repository_impl.dart';
 import '../../features/orders/domain/repositories/order_repository.dart';
 import '../../features/orders/domain/usecases/create_order_usecase.dart';
+import '../../features/orders/domain/usecases/get_order_usecase.dart';
+import '../../features/orders/domain/usecases/list_orders_usecase.dart';
 import '../../features/orders/presentation/cubit/checkout_cubit.dart';
+import '../../features/orders/presentation/cubit/order_list_cubit.dart';
+import '../../features/orders/presentation/cubit/order_tracking_cubit.dart';
 
 import '../../features/wishlist/data/datasources/wishlist_local_data_source.dart';
 import '../../features/wishlist/data/repositories/wishlist_repository_impl.dart';
@@ -153,7 +157,11 @@ Future<void> initDependencies() async {
     () => OrderRepositoryImpl(remoteDataSource: sl(), networkInfo: sl()),
   );
   sl.registerLazySingleton(() => CreateOrderUseCase(sl()));
+  sl.registerLazySingleton(() => GetOrderUseCase(sl()));
+  sl.registerLazySingleton(() => ListOrdersUseCase(sl()));
   sl.registerFactory(() => CheckoutCubit(createOrderUseCase: sl()));
+  sl.registerFactory(() => OrderListCubit(listOrdersUseCase: sl()));
+  sl.registerFactory(() => OrderTrackingCubit(getOrderUseCase: sl()));
 
   // ----- Wishlist feature -----
   sl.registerLazySingleton<WishlistLocalDataSource>(

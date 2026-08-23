@@ -33,4 +33,33 @@ class OrderRepositoryImpl implements OrderRepository {
       return Left(ServerFailure(e.message));
     }
   }
+
+  @override
+  Future<Either<Failure, OrderEntity>> getOrder(String id) async {
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure());
+    }
+    try {
+      final order = await remoteDataSource.getOrder(id);
+      return Right(order);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<OrderEntity>>> listOrders({
+    int offset = 0,
+    int limit = 20,
+  }) async {
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure());
+    }
+    try {
+      final orders = await remoteDataSource.listOrders(offset: offset, limit: limit);
+      return Right(orders);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    }
+  }
 }

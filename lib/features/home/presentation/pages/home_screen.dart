@@ -5,6 +5,7 @@ import '../../../cart/presentation/cubit/cart_cubit.dart';
 import '../../../cart/presentation/pages/cart_screen.dart';
 import '../../../categories/domain/entities/category_entity.dart';
 import '../../../categories/presentation/cubit/category_cubit.dart';
+import '../../../orders/presentation/pages/orders_screen.dart';
 import '../../../products/presentation/cubit/product_cubit.dart';
 import '../../../products/presentation/widgets/product_grid.dart';
 import '../../../wishlist/presentation/cubit/wishlist_cubit.dart';
@@ -77,6 +78,13 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('Aura Fashion'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.receipt_long_outlined),
+            tooltip: 'My Orders',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const OrdersScreen()),
+            ),
+          ),
           BlocBuilder<WishlistCubit, WishlistState>(
             builder: (context, state) {
               return Stack(
