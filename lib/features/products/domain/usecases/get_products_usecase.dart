@@ -16,6 +16,9 @@ class GetProductsUseCase implements UseCase<PaginatedProducts, GetProductsParams
       offset: params.offset,
       limit: params.limit,
       categoryId: params.categoryId,
+      search: params.search,
+      minPrice: params.minPrice,
+      maxPrice: params.maxPrice,
     );
   }
 }
@@ -24,13 +27,19 @@ class GetProductsParams extends Equatable {
   final int offset;
   final int limit;
   final String? categoryId;
+  final String? search;
+  final double? minPrice;
+  final double? maxPrice;
 
   const GetProductsParams({
     this.offset = 0,
     this.limit = 20,
     this.categoryId,
+    this.search,
+    this.minPrice,
+    this.maxPrice,
   });
 
   @override
-  List<Object?> get props => [offset, limit, categoryId];
+  List<Object?> get props => [offset, limit, categoryId, search, minPrice, maxPrice];
 }

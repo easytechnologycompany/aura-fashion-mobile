@@ -21,6 +21,9 @@ class ProductRepositoryImpl implements ProductRepository {
     int offset = 0,
     int limit = 20,
     String? categoryId,
+    String? search,
+    double? minPrice,
+    double? maxPrice,
   }) async {
     if (!await networkInfo.isConnected) {
       return const Left(NetworkFailure());
@@ -30,6 +33,9 @@ class ProductRepositoryImpl implements ProductRepository {
         offset: offset,
         limit: limit,
         categoryId: categoryId,
+        search: search,
+        minPrice: minPrice,
+        maxPrice: maxPrice,
       );
       return Right(
         PaginatedProducts(products: page.products, total: page.total),

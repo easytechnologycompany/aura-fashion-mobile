@@ -16,6 +16,9 @@ abstract class ProductRemoteDataSource {
     required int offset,
     required int limit,
     String? categoryId,
+    String? search,
+    double? minPrice,
+    double? maxPrice,
   });
 
   Future<ProductModel> getProductById(String id);
@@ -31,6 +34,9 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
     required int offset,
     required int limit,
     String? categoryId,
+    String? search,
+    double? minPrice,
+    double? maxPrice,
   }) async {
     try {
       final response = await dio.get(
@@ -39,6 +45,9 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
           'offset': offset,
           'limit': limit,
           'category_id': ?categoryId,
+          'q': ?search,
+          'min_price': ?minPrice,
+          'max_price': ?maxPrice,
         },
       );
       final data = response.data as Map<String, dynamic>;

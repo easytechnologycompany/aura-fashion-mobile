@@ -11,10 +11,20 @@ class ProductCubit extends Cubit<ProductState> {
 
   ProductCubit({required this.getProductsUseCase}) : super(const ProductState());
 
-  Future<void> fetchProducts({String? categoryId}) async {
+  Future<void> fetchProducts({
+    String? categoryId,
+    String? search,
+    double? minPrice,
+    double? maxPrice,
+  }) async {
     emit(state.copyWith(status: ProductStatus.loading));
     final result = await getProductsUseCase(
-      GetProductsParams(categoryId: categoryId),
+      GetProductsParams(
+        categoryId: categoryId,
+        search: search,
+        minPrice: minPrice,
+        maxPrice: maxPrice,
+      ),
     );
     result.fold(
       (failure) => emit(

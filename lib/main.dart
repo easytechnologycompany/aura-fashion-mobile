@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'core/di/injection_container.dart' as di;
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_cubit.dart';
+import 'features/addresses/presentation/cubit/address_cubit.dart';
 import 'features/auth/presentation/cubit/auth_cubit.dart';
 import 'features/auth/presentation/pages/login_screen.dart';
 import 'features/cart/presentation/cubit/cart_cubit.dart';
@@ -31,12 +33,22 @@ class AuraFashionApp extends StatelessWidget {
         BlocProvider<CategoryCubit>(create: (_) => di.sl<CategoryCubit>()),
         BlocProvider<CartCubit>(create: (_) => di.sl<CartCubit>()),
         BlocProvider<WishlistCubit>(create: (_) => di.sl<WishlistCubit>()),
+        BlocProvider<AddressCubit>(
+          create: (_) => di.sl<AddressCubit>()..loadAddresses(),
+        ),
+        BlocProvider<ThemeCubit>(create: (_) => di.sl<ThemeCubit>()),
       ],
-      child: MaterialApp(
-        title: 'Aura Fashion',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light,
-        home: const _RootGate(),
+      child: BlocBuilder<ThemeCubit, ThemeMode>(
+        builder: (context, themeMode) {
+          return MaterialApp(
+            title: 'Aura Fashion',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.light,
+            darkTheme: AppTheme.dark,
+            themeMode: themeMode,
+            home: const _RootGate(),
+          );
+        },
       ),
     );
   }

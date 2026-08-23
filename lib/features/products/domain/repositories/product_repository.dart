@@ -15,6 +15,9 @@ abstract class ProductRepository {
     int offset = 0,
     int limit = 20,
     String? categoryId,
+    String? search,
+    double? minPrice,
+    double? maxPrice,
   });
 
   Future<Either<Failure, ProductEntity>> getProductById(String id);

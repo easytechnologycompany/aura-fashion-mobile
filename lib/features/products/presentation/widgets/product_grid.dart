@@ -13,7 +13,14 @@ class ProductGrid extends StatelessWidget {
   /// restricting the grid to on-sale items without a separate API call.
   final bool Function(ProductEntity product)? filter;
 
-  const ProductGrid({super.key, required this.onRefresh, this.filter});
+  final String emptyMessage;
+
+  const ProductGrid({
+    super.key,
+    required this.onRefresh,
+    this.filter,
+    this.emptyMessage = 'No products in this category yet',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +64,7 @@ class ProductGrid extends StatelessWidget {
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                     const SizedBox(height: 12),
-                    const Text('No products in this category yet'),
+                    Text(emptyMessage),
                   ],
                 ),
               );

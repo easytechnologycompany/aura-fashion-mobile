@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection_container.dart' as di;
+import '../../../addresses/domain/entities/address_entity.dart';
+import '../../../addresses/presentation/cubit/address_cubit.dart';
 import '../../../home/presentation/pages/home_screen.dart';
 import '../../../orders/presentation/cubit/checkout_cubit.dart';
 import '../../../orders/presentation/pages/order_tracking_screen.dart';
@@ -173,12 +175,16 @@ class _CheckoutSheet extends StatefulWidget {
 /// would need a backend field to carry the code/amount onto the order.
 const _promoCodes = {'WELCOME10': 0.10, 'SAVE20': 0.20};
 
+/// Dummy options — aura-fashion-backend just stores whatever string is sent
+/// as `payment_method`; there's no real payment processor integration.
+const _paymentMethods = ['Cash on Delivery', 'Credit Card', 'PayPal'];
+
 class _CheckoutSheetState extends State<_CheckoutSheet> {
-  final _formKey = GlobalKey<FormState>();
-  final _addressController = TextEditingController();
   final _promoController = TextEditingController();
   String? _appliedCode;
   String? _promoError;
+  String _paymentMethod = _paymentMethods.first;
+  bool _showAddressError = false;
 
   double get _discountFraction =>
       _appliedCode == null ? 0 : (_promoCodes[_appliedCode] ?? 0);
@@ -209,9 +215,71 @@ class _CheckoutSheetState extends State<_CheckoutSheet> {
 
   @override
   void dispose() {
-    _addressController.dispose();
     _promoController.dispose();
     super.dispose();
+  }
+
+  Future<void> _addNewAddress(BuildContext context) async {
+    final addressCubit = context.read<AddressCubit>();
+    final labelController = TextEditingController();
+    final addressController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Add address'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: labelController,
+                decoration: const InputDecoration(labelText: 'Label (e.g. Home)'),
+                validator: (v) =>
+                    (v == null || v.trim().isEmpty) ? 'Label is required' : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: addressController,
+                minLines: 2,
+                maxLines: 4,
+                decoration: const InputDecoration(labelText: 'Full address'),
+                validator: (v) =>
+                    (v == null || v.trim().isEmpty) ? 'Address is required' : null,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (!formKey.currentState!.validate()) return;
+              Navigator.of(dialogContext).pop(true);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+
+    if (saved == true) {
+      await addressCubit.addAddress(
+        AddressEntity(
+          id: DateTime.now().microsecondsSinceEpoch.toString(),
+          label: labelController.text.trim(),
+          fullAddress: addressController.text.trim(),
+        ),
+      );
+      if (context.mounted) setState(() => _showAddressError = false);
+    }
+    labelController.dispose();
+    addressController.dispose();
   }
 
   @override
@@ -257,26 +325,92 @@ class _CheckoutSheetState extends State<_CheckoutSheet> {
           final discount = subtotal * _discountFraction;
           final total = subtotal - discount;
 
-          return Form(
-            key: _formKey,
+          return SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('Shipping details', style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _addressController,
-                  enabled: !isSubmitting,
-                  minLines: 2,
-                  maxLines: 4,
-                  decoration: const InputDecoration(
-                    labelText: 'Shipping address',
-                    border: OutlineInputBorder(),
+                Text('Shipping address', style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                BlocBuilder<AddressCubit, AddressState>(
+                  builder: (context, addressState) {
+                    if (addressState.addresses.isEmpty) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'No saved addresses yet',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                ),
+                          ),
+                          const SizedBox(height: 4),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: TextButton.icon(
+                              onPressed:
+                                  isSubmitting ? null : () => _addNewAddress(context),
+                              icon: const Icon(Icons.add),
+                              label: const Text('Add address'),
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+                    return RadioGroup<String>(
+                      groupValue: addressState.selectedId,
+                      onChanged: (value) {
+                        if (isSubmitting || value == null) return;
+                        context.read<AddressCubit>().selectAddress(value);
+                        setState(() => _showAddressError = false);
+                      },
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          for (final address in addressState.addresses)
+                            RadioListTile<String>(
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(address.label),
+                              subtitle: Text(address.fullAddress),
+                              value: address.id,
+                            ),
+                          TextButton.icon(
+                            onPressed:
+                                isSubmitting ? null : () => _addNewAddress(context),
+                            icon: const Icon(Icons.add),
+                            label: const Text('Add new address'),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                if (_showAddressError)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      'Select or add a shipping address',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                        fontSize: 12,
+                      ),
+                    ),
                   ),
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'Shipping address is required'
-                      : null,
+                const SizedBox(height: 20),
+                Text('Payment method', style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    for (final method in _paymentMethods)
+                      ChoiceChip(
+                        label: Text(method),
+                        selected: _paymentMethod == method,
+                        onSelected: isSubmitting
+                            ? null
+                            : (_) => setState(() => _paymentMethod = method),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 20),
                 Text('Promo code', style: Theme.of(context).textTheme.titleMedium),
@@ -359,10 +493,15 @@ class _CheckoutSheetState extends State<_CheckoutSheet> {
                   onPressed: isSubmitting
                       ? null
                       : () {
-                          if (!_formKey.currentState!.validate()) return;
+                          final selected = context.read<AddressCubit>().selected;
+                          if (selected == null) {
+                            setState(() => _showAddressError = true);
+                            return;
+                          }
                           context.read<CheckoutCubit>().placeOrder(
                                 cartItems: widget.cartCubit.state.items,
-                                shippingAddress: _addressController.text.trim(),
+                                shippingAddress: selected.fullAddress,
+                                paymentMethod: _paymentMethod,
                               );
                         },
                   child: isSubmitting

@@ -33,4 +33,6 @@ class StorageKeys {
   static const cachedUser = 'cached_user';
   static const cartItems = 'cart_items';
   static const wishlistItems = 'wishlist_items';
+  static const savedAddresses = 'saved_addresses';
+  static const themeMode = 'theme_mode';
 }

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../network/dio_client.dart';
 import '../network/network_info.dart';
+import '../theme/theme_cubit.dart';
 
 import '../../features/auth/data/datasources/auth_local_data_source.dart';
 import '../../features/auth/data/datasources/auth_remote_data_source.dart';
@@ -51,6 +52,14 @@ import '../../features/orders/presentation/cubit/checkout_cubit.dart';
 import '../../features/orders/presentation/cubit/order_list_cubit.dart';
 import '../../features/orders/presentation/cubit/order_tracking_cubit.dart';
 
+import '../../features/addresses/data/datasources/address_local_data_source.dart';
+import '../../features/addresses/data/repositories/address_repository_impl.dart';
+import '../../features/addresses/domain/repositories/address_repository.dart';
+import '../../features/addresses/domain/usecases/add_address_usecase.dart';
+import '../../features/addresses/domain/usecases/get_addresses_usecase.dart';
+import '../../features/addresses/domain/usecases/remove_address_usecase.dart';
+import '../../features/addresses/presentation/cubit/address_cubit.dart';
+
 import '../../features/wishlist/data/datasources/wishlist_local_data_source.dart';
 import '../../features/wishlist/data/repositories/wishlist_repository_impl.dart';
 import '../../features/wishlist/domain/repositories/wishlist_repository.dart';
@@ -73,6 +82,7 @@ Future<void> initDependencies() async {
   // ----- Core -----
   sl.registerLazySingleton<NetworkInfo>(() => NetworkInfoImpl(sl()));
   sl.registerLazySingleton<DioClient>(() => DioClient(sl()));
+  sl.registerLazySingleton(() => ThemeCubit(sl()));
 
   // ----- Auth feature -----
   sl.registerLazySingleton<AuthRemoteDataSource>(
@@ -180,6 +190,26 @@ Future<void> initDependencies() async {
       getWishlistUseCase: sl(),
       addToWishlistUseCase: sl(),
       removeFromWishlistUseCase: sl(),
+    ),
+  );
+
+  // ----- Addresses feature -----
+  sl.registerLazySingleton<AddressLocalDataSource>(
+    () => AddressLocalDataSourceImpl(sl()),
+  );
+  sl.registerLazySingleton<AddressRepository>(
+    () => AddressRepositoryImpl(localDataSource: sl()),
+  );
+  sl.registerLazySingleton(() => GetAddressesUseCase(sl()));
+  sl.registerLazySingleton(() => AddAddressUseCase(sl()));
+  sl.registerLazySingleton(() => RemoveAddressUseCase(sl()));
+  // Lazy singleton: the selected/saved address list is shared between the
+  // checkout sheet and any future address-management screen.
+  sl.registerLazySingleton(
+    () => AddressCubit(
+      getAddressesUseCase: sl(),
+      addAddressUseCase: sl(),
+      removeAddressUseCase: sl(),
     ),
   );
 }

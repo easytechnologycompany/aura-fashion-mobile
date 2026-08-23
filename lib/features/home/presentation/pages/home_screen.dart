@@ -7,6 +7,8 @@ import '../../../categories/domain/entities/category_entity.dart';
 import '../../../categories/presentation/cubit/category_cubit.dart';
 import '../../../orders/presentation/pages/orders_screen.dart';
 import '../../../products/presentation/cubit/product_cubit.dart';
+import '../../../products/presentation/pages/search_screen.dart';
+import '../../../settings/presentation/pages/settings_screen.dart';
 import '../../../products/presentation/widgets/product_grid.dart';
 import '../../../wishlist/presentation/cubit/wishlist_cubit.dart';
 import '../../../wishlist/presentation/pages/wishlist_screen.dart';
@@ -78,6 +80,13 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('Aura Fashion'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            tooltip: 'Search',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const SearchScreen()),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.receipt_long_outlined),
             tooltip: 'My Orders',
@@ -158,6 +167,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               );
             },
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Settings',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+            ),
           ),
           const SizedBox(width: 8),
         ],
