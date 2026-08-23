@@ -1,6 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../../../wishlist/domain/entities/wishlist_item_entity.dart';
+import '../../../wishlist/presentation/widgets/wishlist_button.dart';
 import '../../domain/entities/product_entity.dart';
 
 class ProductCard extends StatelessWidget {
@@ -62,6 +64,19 @@ class ProductCard extends StatelessWidget {
                         ),
                       ),
                     ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: WishlistButton(
+                      item: WishlistItemEntity(
+                        productId: product.id,
+                        name: product.name,
+                        imageUrl: product.imageUrl,
+                        unitPrice: product.price,
+                        salePrice: product.salePrice,
+                      ),
+                    ),
+                  ),
                   if (!product.inStock)
                     Positioned.fill(
                       child: ColoredBox(

@@ -7,6 +7,8 @@ import '../../../categories/domain/entities/category_entity.dart';
 import '../../../categories/presentation/cubit/category_cubit.dart';
 import '../../../products/presentation/cubit/product_cubit.dart';
 import '../../../products/presentation/widgets/product_grid.dart';
+import '../../../wishlist/presentation/cubit/wishlist_cubit.dart';
+import '../../../wishlist/presentation/pages/wishlist_screen.dart';
 import '../../domain/home_tab.dart';
 import '../widgets/home_tab_bar.dart';
 import '../widgets/promo_banner.dart';
@@ -30,6 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
     context.read<CategoryCubit>().fetchCategories();
     context.read<ProductCubit>().fetchProducts();
     context.read<CartCubit>().loadCart();
+    context.read<WishlistCubit>().loadWishlist();
   }
 
   /// "Shoes"/"Accessories" resolve to a real backend category by name;
@@ -74,6 +77,43 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('Aura Fashion'),
         actions: [
+          BlocBuilder<WishlistCubit, WishlistState>(
+            builder: (context, state) {
+              return Stack(
+                alignment: Alignment.center,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.favorite_border),
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const WishlistScreen()),
+                    ),
+                  ),
+                  if (state.items.isNotEmpty)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.error,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          '${state.items.length}',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onError,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
           BlocBuilder<CartCubit, CartState>(
             builder: (context, state) {
               return Stack(

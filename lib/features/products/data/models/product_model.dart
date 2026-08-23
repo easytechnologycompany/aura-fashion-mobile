@@ -1,4 +1,5 @@
 import '../../domain/entities/product_entity.dart';
+import 'product_variant_model.dart';
 
 /// Maps the JSON shape returned by aura-fashion-backend's `entity.Product`.
 class ProductModel extends ProductEntity {
@@ -13,6 +14,7 @@ class ProductModel extends ProductEntity {
     required super.stock,
     required super.imageUrl,
     required super.categoryId,
+    super.variants,
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
@@ -27,6 +29,10 @@ class ProductModel extends ProductEntity {
       stock: json['stock'] as int? ?? 0,
       imageUrl: json['image_url'] as String? ?? '',
       categoryId: json['category_id'] as String,
+      variants: (json['variants'] as List<dynamic>?)
+              ?.map((v) => ProductVariantModel.fromJson(v as Map<String, dynamic>))
+              .toList() ??
+          const [],
     );
   }
 

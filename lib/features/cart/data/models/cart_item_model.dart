@@ -8,6 +8,7 @@ class CartItemModel extends CartItemEntity {
     required super.unitPrice,
     required super.quantity,
     required super.availableStock,
+    super.variantLabel,
   });
 
   factory CartItemModel.fromEntity(CartItemEntity entity) {
@@ -18,6 +19,7 @@ class CartItemModel extends CartItemEntity {
       unitPrice: entity.unitPrice,
       quantity: entity.quantity,
       availableStock: entity.availableStock,
+      variantLabel: entity.variantLabel,
     );
   }
 
@@ -29,6 +31,7 @@ class CartItemModel extends CartItemEntity {
       unitPrice: (json['unit_price'] as num).toDouble(),
       quantity: json['quantity'] as int,
       availableStock: json['available_stock'] as int,
+      variantLabel: json['variant_label'] as String?,
     );
   }
 
@@ -40,6 +43,7 @@ class CartItemModel extends CartItemEntity {
       'unit_price': unitPrice,
       'quantity': quantity,
       'available_stock': availableStock,
+      'variant_label': variantLabel,
     };
   }
 }

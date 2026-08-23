@@ -32,4 +32,5 @@ class StorageKeys {
   static const authToken = 'auth_token';
   static const cachedUser = 'cached_user';
   static const cartItems = 'cart_items';
+  static const wishlistItems = 'wishlist_items';
 }

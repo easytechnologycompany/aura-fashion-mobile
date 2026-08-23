@@ -10,6 +10,13 @@ class CartItemEntity extends Equatable {
   final int quantity;
   final int availableStock;
 
+  /// Display-only label for the selected size/color (e.g. "Size M, Black").
+  /// Not sent to the backend — aura-fashion-backend's order API only takes
+  /// product_id + quantity today, so variant selection doesn't yet reach
+  /// the order record; this exists purely so the cart/checkout UI can show
+  /// what the shopper actually picked.
+  final String? variantLabel;
+
   const CartItemEntity({
     required this.productId,
     required this.name,
@@ -17,6 +24,7 @@ class CartItemEntity extends Equatable {
     required this.unitPrice,
     required this.quantity,
     required this.availableStock,
+    this.variantLabel,
   });
 
   double get lineTotal => unitPrice * quantity;
@@ -29,6 +37,7 @@ class CartItemEntity extends Equatable {
       unitPrice: unitPrice,
       quantity: quantity ?? this.quantity,
       availableStock: availableStock,
+      variantLabel: variantLabel,
     );
   }
 
@@ -40,5 +49,6 @@ class CartItemEntity extends Equatable {
         unitPrice,
         quantity,
         availableStock,
+        variantLabel,
       ];
 }

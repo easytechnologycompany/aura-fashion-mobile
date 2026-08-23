@@ -16,19 +16,25 @@ class UpdateCartItemQuantityUseCase
   Future<Either<Failure, List<CartItemEntity>>> call(
     UpdateCartItemQuantityParams params,
   ) {
-    return repository.updateQuantity(params.productId, params.quantity);
+    return repository.updateQuantity(
+      params.productId,
+      params.variantLabel,
+      params.quantity,
+    );
   }
 }
 
 class UpdateCartItemQuantityParams extends Equatable {
   final String productId;
+  final String? variantLabel;
   final int quantity;
 
   const UpdateCartItemQuantityParams({
     required this.productId,
+    this.variantLabel,
     required this.quantity,
   });
 
   @override
-  List<Object?> get props => [productId, quantity];
+  List<Object?> get props => [productId, variantLabel, quantity];
 }

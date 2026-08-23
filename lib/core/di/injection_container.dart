@@ -47,6 +47,14 @@ import '../../features/orders/domain/repositories/order_repository.dart';
 import '../../features/orders/domain/usecases/create_order_usecase.dart';
 import '../../features/orders/presentation/cubit/checkout_cubit.dart';
 
+import '../../features/wishlist/data/datasources/wishlist_local_data_source.dart';
+import '../../features/wishlist/data/repositories/wishlist_repository_impl.dart';
+import '../../features/wishlist/domain/repositories/wishlist_repository.dart';
+import '../../features/wishlist/domain/usecases/add_to_wishlist_usecase.dart';
+import '../../features/wishlist/domain/usecases/get_wishlist_usecase.dart';
+import '../../features/wishlist/domain/usecases/remove_from_wishlist_usecase.dart';
+import '../../features/wishlist/presentation/cubit/wishlist_cubit.dart';
+
 final sl = GetIt.instance;
 
 /// Registers every dependency used across the app. Call once from `main()`
@@ -146,4 +154,24 @@ Future<void> initDependencies() async {
   );
   sl.registerLazySingleton(() => CreateOrderUseCase(sl()));
   sl.registerFactory(() => CheckoutCubit(createOrderUseCase: sl()));
+
+  // ----- Wishlist feature -----
+  sl.registerLazySingleton<WishlistLocalDataSource>(
+    () => WishlistLocalDataSourceImpl(sl()),
+  );
+  sl.registerLazySingleton<WishlistRepository>(
+    () => WishlistRepositoryImpl(localDataSource: sl()),
+  );
+  sl.registerLazySingleton(() => GetWishlistUseCase(sl()));
+  sl.registerLazySingleton(() => AddToWishlistUseCase(sl()));
+  sl.registerLazySingleton(() => RemoveFromWishlistUseCase(sl()));
+  // Lazy singleton (not factory): wishlist state, like the cart, is shared
+  // across every screen (heart icons on cards, detail page, wishlist tab).
+  sl.registerLazySingleton(
+    () => WishlistCubit(
+      getWishlistUseCase: sl(),
+      addToWishlistUseCase: sl(),
+      removeFromWishlistUseCase: sl(),
+    ),
+  );
 }

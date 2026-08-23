@@ -10,8 +10,12 @@ import '../models/cart_item_model.dart';
 abstract class CartLocalDataSource {
   Future<List<CartItemModel>> getItems();
   Future<List<CartItemModel>> addItem(CartItemModel item);
-  Future<List<CartItemModel>> updateQuantity(String productId, int quantity);
-  Future<List<CartItemModel>> removeItem(String productId);
+  Future<List<CartItemModel>> updateQuantity(
+    String productId,
+    String? variantLabel,
+    int quantity,
+  );
+  Future<List<CartItemModel>> removeItem(String productId, String? variantLabel);
   Future<void> clear();
 }
 
@@ -37,7 +41,11 @@ class CartLocalDataSourceImpl implements CartLocalDataSource {
   @override
   Future<List<CartItemModel>> addItem(CartItemModel item) async {
     final items = await getItems();
-    final existingIndex = items.indexWhere((i) => i.productId == item.productId);
+    // A different size/color of the same product is a distinct cart line,
+    // so the match key is (productId, variantLabel), not productId alone.
+    final existingIndex = items.indexWhere(
+      (i) => i.productId == item.productId && i.variantLabel == item.variantLabel,
+    );
 
     if (existingIndex == -1) {
       items.add(
@@ -61,9 +69,15 @@ class CartLocalDataSourceImpl implements CartLocalDataSource {
   }
 
   @override
-  Future<List<CartItemModel>> updateQuantity(String productId, int quantity) async {
+  Future<List<CartItemModel>> updateQuantity(
+    String productId,
+    String? variantLabel,
+    int quantity,
+  ) async {
     final items = await getItems();
-    final index = items.indexWhere((i) => i.productId == productId);
+    final index = items.indexWhere(
+      (i) => i.productId == productId && i.variantLabel == variantLabel,
+    );
     if (index == -1) return items;
 
     if (quantity <= 0) {
@@ -78,9 +92,11 @@ class CartLocalDataSourceImpl implements CartLocalDataSource {
   }
 
   @override
-  Future<List<CartItemModel>> removeItem(String productId) async {
+  Future<List<CartItemModel>> removeItem(String productId, String? variantLabel) async {
     final items = await getItems();
-    items.removeWhere((i) => i.productId == productId);
+    items.removeWhere(
+      (i) => i.productId == productId && i.variantLabel == variantLabel,
+    );
     await _persist(items);
     return items;
   }

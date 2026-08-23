@@ -39,15 +39,25 @@ class CartCubit extends Cubit<CartState> {
     _emitResult(result);
   }
 
-  Future<void> updateQuantity(String productId, int quantity) async {
+  Future<void> updateQuantity(
+    String productId,
+    int quantity, {
+    String? variantLabel,
+  }) async {
     final result = await updateCartItemQuantityUseCase(
-      UpdateCartItemQuantityParams(productId: productId, quantity: quantity),
+      UpdateCartItemQuantityParams(
+        productId: productId,
+        variantLabel: variantLabel,
+        quantity: quantity,
+      ),
     );
     _emitResult(result);
   }
 
-  Future<void> removeItem(String productId) async {
-    final result = await removeFromCartUseCase(productId);
+  Future<void> removeItem(String productId, {String? variantLabel}) async {
+    final result = await removeFromCartUseCase(
+      RemoveFromCartParams(productId: productId, variantLabel: variantLabel),
+    );
     _emitResult(result);
   }
 

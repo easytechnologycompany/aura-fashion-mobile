@@ -164,13 +164,52 @@ class _CheckoutSheet extends StatefulWidget {
   State<_CheckoutSheet> createState() => _CheckoutSheetState();
 }
 
+/// Demo promo codes mapped to a discount fraction of the subtotal.
+///
+/// aura-fashion-backend has no coupon/discount concept, so this only
+/// affects the total previewed in this sheet — the order is still placed,
+/// and charged, at full price. Wiring a real discount through checkout
+/// would need a backend field to carry the code/amount onto the order.
+const _promoCodes = {'WELCOME10': 0.10, 'SAVE20': 0.20};
+
 class _CheckoutSheetState extends State<_CheckoutSheet> {
   final _formKey = GlobalKey<FormState>();
   final _addressController = TextEditingController();
+  final _promoController = TextEditingController();
+  String? _appliedCode;
+  String? _promoError;
+
+  double get _discountFraction =>
+      _appliedCode == null ? 0 : (_promoCodes[_appliedCode] ?? 0);
+
+  void _applyPromoCode() {
+    final code = _promoController.text.trim().toUpperCase();
+    setState(() {
+      if (code.isEmpty) {
+        _promoError = null;
+        _appliedCode = null;
+      } else if (_promoCodes.containsKey(code)) {
+        _appliedCode = code;
+        _promoError = null;
+      } else {
+        _appliedCode = null;
+        _promoError = 'Invalid promo code';
+      }
+    });
+  }
+
+  void _removePromoCode() {
+    setState(() {
+      _appliedCode = null;
+      _promoError = null;
+      _promoController.clear();
+    });
+  }
 
   @override
   void dispose() {
     _addressController.dispose();
+    _promoController.dispose();
     super.dispose();
   }
 
@@ -201,6 +240,10 @@ class _CheckoutSheetState extends State<_CheckoutSheet> {
         },
         builder: (context, state) {
           final isSubmitting = state.status == CheckoutStatus.submitting;
+          final subtotal = widget.cartCubit.state.total;
+          final discount = subtotal * _discountFraction;
+          final total = subtotal - discount;
+
           return Form(
             key: _formKey,
             child: Column(
@@ -221,6 +264,82 @@ class _CheckoutSheetState extends State<_CheckoutSheet> {
                   validator: (v) => (v == null || v.trim().isEmpty)
                       ? 'Shipping address is required'
                       : null,
+                ),
+                const SizedBox(height: 20),
+                Text('Promo code', style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                if (_appliedCode != null)
+                  Row(
+                    children: [
+                      Chip(
+                        avatar: const Icon(Icons.local_offer_outlined, size: 18),
+                        label: Text('$_appliedCode applied'),
+                        onDeleted: isSubmitting ? null : _removePromoCode,
+                      ),
+                    ],
+                  )
+                else
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _promoController,
+                          enabled: !isSubmitting,
+                          textCapitalization: TextCapitalization.characters,
+                          decoration: InputDecoration(
+                            labelText: 'Enter code',
+                            border: const OutlineInputBorder(),
+                            errorText: _promoError,
+                          ),
+                          onFieldSubmitted: (_) => _applyPromoCode(),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      OutlinedButton(
+                        onPressed: isSubmitting ? null : _applyPromoCode,
+                        child: const Text('Apply'),
+                      ),
+                    ],
+                  ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Text('Subtotal', style: Theme.of(context).textTheme.bodyMedium),
+                    const Spacer(),
+                    Text('\$${subtotal.toStringAsFixed(2)}'),
+                  ],
+                ),
+                if (discount > 0) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Text(
+                        'Discount',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Colors.green.shade700,
+                            ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '-\$${discount.toStringAsFixed(2)}',
+                        style: TextStyle(color: Colors.green.shade700),
+                      ),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Text('Total', style: Theme.of(context).textTheme.titleMedium),
+                    const Spacer(),
+                    Text(
+                      '\$${total.toStringAsFixed(2)}',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 20),
                 FilledButton(

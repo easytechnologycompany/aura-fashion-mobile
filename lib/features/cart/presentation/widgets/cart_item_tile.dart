@@ -41,6 +41,15 @@ class CartItemTile extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
+                if (item.variantLabel != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    item.variantLabel!,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                ],
                 const SizedBox(height: 4),
                 Text(
                   '\$${item.unitPrice.toStringAsFixed(2)}',
@@ -53,9 +62,11 @@ class CartItemTile extends StatelessWidget {
                   children: [
                     _QuantityButton(
                       icon: Icons.remove,
-                      onPressed: () => context
-                          .read<CartCubit>()
-                          .updateQuantity(item.productId, item.quantity - 1),
+                      onPressed: () => context.read<CartCubit>().updateQuantity(
+                            item.productId,
+                            item.quantity - 1,
+                            variantLabel: item.variantLabel,
+                          ),
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -64,16 +75,20 @@ class CartItemTile extends StatelessWidget {
                     _QuantityButton(
                       icon: Icons.add,
                       onPressed: item.quantity < item.availableStock
-                          ? () => context
-                              .read<CartCubit>()
-                              .updateQuantity(item.productId, item.quantity + 1)
+                          ? () => context.read<CartCubit>().updateQuantity(
+                                item.productId,
+                                item.quantity + 1,
+                                variantLabel: item.variantLabel,
+                              )
                           : null,
                     ),
                     const Spacer(),
                     IconButton(
                       icon: const Icon(Icons.delete_outline),
-                      onPressed: () =>
-                          context.read<CartCubit>().removeItem(item.productId),
+                      onPressed: () => context.read<CartCubit>().removeItem(
+                            item.productId,
+                            variantLabel: item.variantLabel,
+                          ),
                     ),
                   ],
                 ),

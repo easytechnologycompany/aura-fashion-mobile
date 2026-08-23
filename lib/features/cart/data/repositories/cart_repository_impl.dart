@@ -33,19 +33,25 @@ class CartRepositoryImpl implements CartRepository {
   @override
   Future<Either<Failure, List<CartItemEntity>>> updateQuantity(
     String productId,
+    String? variantLabel,
     int quantity,
   ) async {
     try {
-      return Right(await localDataSource.updateQuantity(productId, quantity));
+      return Right(
+        await localDataSource.updateQuantity(productId, variantLabel, quantity),
+      );
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     }
   }
 
   @override
-  Future<Either<Failure, List<CartItemEntity>>> removeItem(String productId) async {
+  Future<Either<Failure, List<CartItemEntity>>> removeItem(
+    String productId,
+    String? variantLabel,
+  ) async {
     try {
-      return Right(await localDataSource.removeItem(productId));
+      return Right(await localDataSource.removeItem(productId, variantLabel));
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
     }

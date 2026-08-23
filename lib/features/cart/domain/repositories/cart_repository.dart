@@ -12,10 +12,14 @@ abstract class CartRepository {
 
   Future<Either<Failure, List<CartItemEntity>>> updateQuantity(
     String productId,
+    String? variantLabel,
     int quantity,
   );
 
-  Future<Either<Failure, List<CartItemEntity>>> removeItem(String productId);
+  Future<Either<Failure, List<CartItemEntity>>> removeItem(
+    String productId,
+    String? variantLabel,
+  );
 
   Future<Either<Failure, void>> clear();
 }

@@ -5,7 +5,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/di/injection_container.dart' as di;
 import '../../../cart/domain/entities/cart_item_entity.dart';
 import '../../../cart/presentation/cubit/cart_cubit.dart';
+import '../../../wishlist/domain/entities/wishlist_item_entity.dart';
+import '../../../wishlist/presentation/widgets/wishlist_button.dart';
 import '../../domain/entities/product_entity.dart';
+import '../../domain/entities/product_variant_entity.dart';
 import '../cubit/product_detail_cubit.dart';
 
 class ProductDetailScreen extends StatelessWidget {
@@ -31,6 +34,34 @@ class _ProductDetailView extends StatefulWidget {
 
 class _ProductDetailViewState extends State<_ProductDetailView> {
   int _quantity = 1;
+  String? _selectedSize;
+  String? _selectedColor;
+
+  /// The variant matching the current size/color selection, if the product
+  /// has variants and enough of a selection has been made to disambiguate.
+  ProductVariantEntity? _matchingVariant(ProductEntity product) {
+    if (product.variants.isEmpty) return null;
+    for (final variant in product.variants) {
+      final sizeOk = product.availableSizes.isEmpty || variant.size == _selectedSize;
+      final colorOk = product.availableColors.isEmpty || variant.color == _selectedColor;
+      if (sizeOk && colorOk) return variant;
+    }
+    return null;
+  }
+
+  bool _selectionComplete(ProductEntity product) {
+    if (product.availableSizes.isNotEmpty && _selectedSize == null) return false;
+    if (product.availableColors.isNotEmpty && _selectedColor == null) return false;
+    return true;
+  }
+
+  String? _variantLabel() {
+    final parts = [
+      if (_selectedSize != null) 'Size: $_selectedSize',
+      if (_selectedColor != null) 'Color: $_selectedColor',
+    ];
+    return parts.isEmpty ? null : parts.join(', ');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +75,14 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
             case ProductDetailStatus.failure:
               return _ErrorBody(message: state.errorMessage ?? 'Something went wrong');
             case ProductDetailStatus.success:
-              return _DetailBody(product: state.product!);
+              final product = state.product!;
+              return _DetailBody(
+                product: product,
+                selectedSize: _selectedSize,
+                selectedColor: _selectedColor,
+                onSizeSelected: (size) => setState(() => _selectedSize = size),
+                onColorSelected: (color) => setState(() => _selectedColor = color),
+              );
           }
         },
       ),
@@ -53,10 +91,14 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
           if (state.status != ProductDetailStatus.success || state.product == null) {
             return const SizedBox.shrink();
           }
+          final product = state.product!;
           return _AddToCartBar(
-            product: state.product!,
+            product: product,
             quantity: _quantity,
             onQuantityChanged: (q) => setState(() => _quantity = q),
+            matchingVariant: _matchingVariant(product),
+            selectionComplete: _selectionComplete(product),
+            variantLabel: _variantLabel(),
           );
         },
       ),
@@ -68,22 +110,33 @@ class _AddToCartBar extends StatelessWidget {
   final ProductEntity product;
   final int quantity;
   final ValueChanged<int> onQuantityChanged;
+  final ProductVariantEntity? matchingVariant;
+  final bool selectionComplete;
+  final String? variantLabel;
 
   const _AddToCartBar({
     required this.product,
     required this.quantity,
     required this.onQuantityChanged,
+    required this.matchingVariant,
+    required this.selectionComplete,
+    required this.variantLabel,
   });
 
   @override
   Widget build(BuildContext context) {
-    final inStock = product.inStock;
+    final hasVariants = product.variants.isNotEmpty;
+    final effectiveStock = matchingVariant?.stock ?? product.stock;
+    final inStock = hasVariants
+        ? (selectionComplete && effectiveStock > 0)
+        : product.inStock;
+    final canAdd = hasVariants ? (selectionComplete && effectiveStock > 0) : product.inStock;
 
     return SafeArea(
       minimum: const EdgeInsets.all(16),
       child: Row(
         children: [
-          if (inStock)
+          if (!hasVariants || selectionComplete)
             DecoratedBox(
               decoration: BoxDecoration(
                 border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
@@ -99,7 +152,7 @@ class _AddToCartBar extends StatelessWidget {
                   Text('$quantity', style: Theme.of(context).textTheme.titleMedium),
                   IconButton(
                     icon: const Icon(Icons.add),
-                    onPressed: quantity < product.stock
+                    onPressed: quantity < effectiveStock
                         ? () => onQuantityChanged(quantity + 1)
                         : null,
                   ),
@@ -109,7 +162,7 @@ class _AddToCartBar extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: FilledButton(
-              onPressed: inStock
+              onPressed: canAdd
                   ? () {
                       context.read<CartCubit>().addItem(
                             CartItemEntity(
@@ -118,7 +171,8 @@ class _AddToCartBar extends StatelessWidget {
                               imageUrl: product.imageUrl,
                               unitPrice: product.effectivePrice,
                               quantity: quantity,
-                              availableStock: product.stock,
+                              availableStock: effectiveStock,
+                              variantLabel: variantLabel,
                             ),
                           );
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -126,7 +180,13 @@ class _AddToCartBar extends StatelessWidget {
                       );
                     }
                   : null,
-              child: Text(inStock ? 'Add to Cart' : 'Out of Stock'),
+              child: Text(
+                !inStock && (!hasVariants || selectionComplete)
+                    ? 'Out of Stock'
+                    : (hasVariants && !selectionComplete)
+                        ? 'Select options'
+                        : 'Add to Cart',
+              ),
             ),
           ),
         ],
@@ -182,8 +242,18 @@ class _ErrorBody extends StatelessWidget {
 
 class _DetailBody extends StatelessWidget {
   final ProductEntity product;
+  final String? selectedSize;
+  final String? selectedColor;
+  final ValueChanged<String> onSizeSelected;
+  final ValueChanged<String> onColorSelected;
 
-  const _DetailBody({required this.product});
+  const _DetailBody({
+    required this.product,
+    required this.selectedSize,
+    required this.selectedColor,
+    required this.onSizeSelected,
+    required this.onColorSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -192,6 +262,21 @@ class _DetailBody extends StatelessWidget {
         SliverAppBar(
           expandedHeight: 360,
           pinned: true,
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: WishlistButton(
+                size: 24,
+                item: WishlistItemEntity(
+                  productId: product.id,
+                  name: product.name,
+                  imageUrl: product.imageUrl,
+                  unitPrice: product.price,
+                  salePrice: product.salePrice,
+                ),
+              ),
+            ),
+          ],
           flexibleSpace: FlexibleSpaceBar(
             background: product.imageUrl.isNotEmpty
                 ? CachedNetworkImage(imageUrl: product.imageUrl, fit: BoxFit.cover)
@@ -246,6 +331,40 @@ class _DetailBody extends StatelessWidget {
                             : Theme.of(context).colorScheme.error,
                       ),
                 ),
+                if (product.availableSizes.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  Text('Size', style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: product.availableSizes
+                        .map(
+                          (size) => ChoiceChip(
+                            label: Text(size),
+                            selected: selectedSize == size,
+                            onSelected: (_) => onSizeSelected(size),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ],
+                if (product.availableColors.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Text('Color', style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: product.availableColors
+                        .map(
+                          (color) => ChoiceChip(
+                            label: Text(color),
+                            selected: selectedColor == color,
+                            onSelected: (_) => onColorSelected(color),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ],
                 const SizedBox(height: 20),
                 Text('Description', style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),

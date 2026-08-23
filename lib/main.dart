@@ -9,6 +9,7 @@ import 'features/cart/presentation/cubit/cart_cubit.dart';
 import 'features/categories/presentation/cubit/category_cubit.dart';
 import 'features/home/presentation/pages/home_screen.dart';
 import 'features/products/presentation/cubit/product_cubit.dart';
+import 'features/wishlist/presentation/cubit/wishlist_cubit.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,6 +30,7 @@ class AuraFashionApp extends StatelessWidget {
         BlocProvider<ProductCubit>(create: (_) => di.sl<ProductCubit>()),
         BlocProvider<CategoryCubit>(create: (_) => di.sl<CategoryCubit>()),
         BlocProvider<CartCubit>(create: (_) => di.sl<CartCubit>()),
+        BlocProvider<WishlistCubit>(create: (_) => di.sl<WishlistCubit>()),
       ],
       child: MaterialApp(
         title: 'Aura Fashion',
