@@ -1,11 +1,11 @@
 {
-    "name": "aura_fashion_mobile",
-    "short_name": "aura_fashion_mobile",
+    "name": "Aura Fashion",
+    "short_name": "Aura Fashion",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#E94057",
+    "theme_color": "#E94057",
+    "description": "Aura Fashion — your e-commerce fashion catalog.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
