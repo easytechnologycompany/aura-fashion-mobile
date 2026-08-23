@@ -29,6 +29,24 @@ import '../../features/categories/domain/repositories/category_repository.dart';
 import '../../features/categories/domain/usecases/get_categories_usecase.dart';
 import '../../features/categories/presentation/cubit/category_cubit.dart';
 
+import '../../features/products/presentation/cubit/product_detail_cubit.dart';
+
+import '../../features/cart/data/datasources/cart_local_data_source.dart';
+import '../../features/cart/data/repositories/cart_repository_impl.dart';
+import '../../features/cart/domain/repositories/cart_repository.dart';
+import '../../features/cart/domain/usecases/add_to_cart_usecase.dart';
+import '../../features/cart/domain/usecases/clear_cart_usecase.dart';
+import '../../features/cart/domain/usecases/get_cart_usecase.dart';
+import '../../features/cart/domain/usecases/remove_from_cart_usecase.dart';
+import '../../features/cart/domain/usecases/update_cart_item_quantity_usecase.dart';
+import '../../features/cart/presentation/cubit/cart_cubit.dart';
+
+import '../../features/orders/data/datasources/order_remote_data_source.dart';
+import '../../features/orders/data/repositories/order_repository_impl.dart';
+import '../../features/orders/domain/repositories/order_repository.dart';
+import '../../features/orders/domain/usecases/create_order_usecase.dart';
+import '../../features/orders/presentation/cubit/checkout_cubit.dart';
+
 final sl = GetIt.instance;
 
 /// Registers every dependency used across the app. Call once from `main()`
@@ -91,4 +109,41 @@ Future<void> initDependencies() async {
   );
   sl.registerLazySingleton(() => GetCategoriesUseCase(sl()));
   sl.registerFactory(() => CategoryCubit(getCategoriesUseCase: sl()));
+
+  // ----- Product detail (uses the products feature's repository) -----
+  sl.registerFactory(() => ProductDetailCubit(getProductByIdUseCase: sl()));
+
+  // ----- Cart feature -----
+  sl.registerLazySingleton<CartLocalDataSource>(
+    () => CartLocalDataSourceImpl(sl()),
+  );
+  sl.registerLazySingleton<CartRepository>(
+    () => CartRepositoryImpl(localDataSource: sl()),
+  );
+  sl.registerLazySingleton(() => GetCartUseCase(sl()));
+  sl.registerLazySingleton(() => AddToCartUseCase(sl()));
+  sl.registerLazySingleton(() => UpdateCartItemQuantityUseCase(sl()));
+  sl.registerLazySingleton(() => RemoveFromCartUseCase(sl()));
+  sl.registerLazySingleton(() => ClearCartUseCase(sl()));
+  // Lazy singleton (not factory): the cart is app-wide state shared across
+  // every screen, so all callers must see the same Cubit instance.
+  sl.registerLazySingleton(
+    () => CartCubit(
+      getCartUseCase: sl(),
+      addToCartUseCase: sl(),
+      updateCartItemQuantityUseCase: sl(),
+      removeFromCartUseCase: sl(),
+      clearCartUseCase: sl(),
+    ),
+  );
+
+  // ----- Orders feature (checkout) -----
+  sl.registerLazySingleton<OrderRemoteDataSource>(
+    () => OrderRemoteDataSourceImpl(sl<DioClient>().dio),
+  );
+  sl.registerLazySingleton<OrderRepository>(
+    () => OrderRepositoryImpl(remoteDataSource: sl(), networkInfo: sl()),
+  );
+  sl.registerLazySingleton(() => CreateOrderUseCase(sl()));
+  sl.registerFactory(() => CheckoutCubit(createOrderUseCase: sl()));
 }

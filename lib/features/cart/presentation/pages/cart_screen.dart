@@ -1,0 +1,201 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../../../core/di/injection_container.dart' as di;
+import '../../../orders/presentation/cubit/checkout_cubit.dart';
+import '../cubit/cart_cubit.dart';
+import '../widgets/cart_item_tile.dart';
+
+class CartScreen extends StatefulWidget {
+  const CartScreen({super.key});
+
+  @override
+  State<CartScreen> createState() => _CartScreenState();
+}
+
+class _CartScreenState extends State<CartScreen> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<CartCubit>().loadCart();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('My Cart')),
+      body: BlocBuilder<CartCubit, CartState>(
+        builder: (context, state) {
+          if (state.status == CartStatus.loading || state.status == CartStatus.initial) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (state.items.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.shopping_cart_outlined,
+                    size: 48,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(height: 12),
+                  const Text('Your cart is empty'),
+                ],
+              ),
+            );
+          }
+          return ListView.separated(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            itemCount: state.items.length,
+            separatorBuilder: (_, _) => const Divider(height: 1),
+            itemBuilder: (context, index) => CartItemTile(item: state.items[index]),
+          );
+        },
+      ),
+      bottomNavigationBar: BlocBuilder<CartCubit, CartState>(
+        builder: (context, state) {
+          if (state.items.isEmpty) return const SizedBox.shrink();
+          return SafeArea(
+            minimum: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Total',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      Text(
+                        '\$${state.total.toStringAsFixed(2)}',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+                FilledButton(
+                  onPressed: () => _openCheckout(context),
+                  child: const Text('Checkout'),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _openCheckout(BuildContext context) {
+    final cartCubit = context.read<CartCubit>();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => BlocProvider(
+        create: (_) => di.sl<CheckoutCubit>(),
+        child: _CheckoutSheet(cartCubit: cartCubit),
+      ),
+    );
+  }
+}
+
+class _CheckoutSheet extends StatefulWidget {
+  final CartCubit cartCubit;
+
+  const _CheckoutSheet({required this.cartCubit});
+
+  @override
+  State<_CheckoutSheet> createState() => _CheckoutSheetState();
+}
+
+class _CheckoutSheetState extends State<_CheckoutSheet> {
+  final _formKey = GlobalKey<FormState>();
+  final _addressController = TextEditingController();
+
+  @override
+  void dispose() {
+    _addressController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+      ),
+      child: BlocConsumer<CheckoutCubit, CheckoutState>(
+        listener: (context, state) {
+          if (state.status == CheckoutStatus.success) {
+            widget.cartCubit.clear();
+            Navigator.of(context).pop();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Order placed! Total \$${state.order!.total.toStringAsFixed(2)}'),
+              ),
+            );
+          } else if (state.status == CheckoutStatus.failure) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.errorMessage ?? 'Failed to place order')),
+            );
+          }
+        },
+        builder: (context, state) {
+          final isSubmitting = state.status == CheckoutStatus.submitting;
+          return Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('Shipping details', style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _addressController,
+                  enabled: !isSubmitting,
+                  minLines: 2,
+                  maxLines: 4,
+                  decoration: const InputDecoration(
+                    labelText: 'Shipping address',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Shipping address is required'
+                      : null,
+                ),
+                const SizedBox(height: 20),
+                FilledButton(
+                  onPressed: isSubmitting
+                      ? null
+                      : () {
+                          if (!_formKey.currentState!.validate()) return;
+                          context.read<CheckoutCubit>().placeOrder(
+                                cartItems: widget.cartCubit.state.items,
+                                shippingAddress: _addressController.text.trim(),
+                              );
+                        },
+                  child: isSubmitting
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Place Order'),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}

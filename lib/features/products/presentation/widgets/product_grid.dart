@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../cubit/product_cubit.dart';
+import '../pages/product_detail_screen.dart';
 import 'product_card.dart';
 
 class ProductGrid extends StatelessWidget {
@@ -64,8 +65,17 @@ class ProductGrid extends StatelessWidget {
                   mainAxisSpacing: 12,
                 ),
                 itemCount: state.products.length,
-                itemBuilder: (context, index) =>
-                    ProductCard(product: state.products[index]),
+                itemBuilder: (context, index) {
+                  final product = state.products[index];
+                  return ProductCard(
+                    product: product,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ProductDetailScreen(productId: product.id),
+                      ),
+                    ),
+                  );
+                },
               ),
             );
         }

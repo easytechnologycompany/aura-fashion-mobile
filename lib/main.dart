@@ -5,6 +5,7 @@ import 'core/di/injection_container.dart' as di;
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/cubit/auth_cubit.dart';
 import 'features/auth/presentation/pages/login_screen.dart';
+import 'features/cart/presentation/cubit/cart_cubit.dart';
 import 'features/categories/presentation/cubit/category_cubit.dart';
 import 'features/home/presentation/pages/home_screen.dart';
 import 'features/products/presentation/cubit/product_cubit.dart';
@@ -27,6 +28,7 @@ class AuraFashionApp extends StatelessWidget {
         ),
         BlocProvider<ProductCubit>(create: (_) => di.sl<ProductCubit>()),
         BlocProvider<CategoryCubit>(create: (_) => di.sl<CategoryCubit>()),
+        BlocProvider<CartCubit>(create: (_) => di.sl<CartCubit>()),
       ],
       child: MaterialApp(
         title: 'Aura Fashion',
