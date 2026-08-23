@@ -3,13 +3,17 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../cart/presentation/cubit/cart_cubit.dart';
 import '../../../cart/presentation/pages/cart_screen.dart';
+import '../../../categories/domain/entities/category_entity.dart';
 import '../../../categories/presentation/cubit/category_cubit.dart';
 import '../../../products/presentation/cubit/product_cubit.dart';
 import '../../../products/presentation/widgets/product_grid.dart';
-import '../widgets/category_chips_bar.dart';
+import '../../domain/home_tab.dart';
+import '../widgets/home_tab_bar.dart';
+import '../widgets/promo_banner.dart';
 
-/// The post-login landing screen: category filter chips over a product grid,
-/// both backed by /categories and /products on aura-fashion-backend.
+/// The post-login landing screen: a SHEIN-style promo banner and top-level
+/// browse tabs (New In / Women / Shoes / Accessories / Sale) over a product
+/// grid, backed by /categories and /products on aura-fashion-backend.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -18,6 +22,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  HomeTab _selectedTab = HomeTab.newIn;
+
   @override
   void initState() {
     super.initState();
@@ -26,13 +32,40 @@ class _HomeScreenState extends State<HomeScreen> {
     context.read<CartCubit>().loadCart();
   }
 
+  /// "Shoes"/"Accessories" resolve to a real backend category by name;
+  /// "New In"/"Women" browse everything; "Sale" also fetches everything and
+  /// is narrowed client-side in [_saleFilter] instead of a category filter.
+  String? _categoryIdFor(HomeTab tab, List<CategoryEntity> categories) {
+    switch (tab) {
+      case HomeTab.shoes:
+        return categories
+            .cast<CategoryEntity?>()
+            .firstWhere((c) => c?.name == 'Shoes', orElse: () => null)
+            ?.id;
+      case HomeTab.accessories:
+        return categories
+            .cast<CategoryEntity?>()
+            .firstWhere((c) => c?.name == 'Accessories', orElse: () => null)
+            ?.id;
+      case HomeTab.newIn:
+      case HomeTab.women:
+      case HomeTab.sale:
+        return null;
+    }
+  }
+
+  void _onTabSelected(HomeTab tab) {
+    setState(() => _selectedTab = tab);
+    final categoryId = _categoryIdFor(tab, context.read<CategoryCubit>().state.categories);
+    context.read<ProductCubit>().fetchProducts(categoryId: categoryId);
+  }
+
   Future<void> _refresh() async {
-    await Future.wait([
-      context.read<CategoryCubit>().fetchCategories(),
-      context.read<ProductCubit>().fetchProducts(
-            categoryId: context.read<CategoryCubit>().state.selectedCategoryId,
-          ),
-    ]);
+    final categoryCubit = context.read<CategoryCubit>();
+    final productCubit = context.read<ProductCubit>();
+    await categoryCubit.fetchCategories();
+    final categoryId = _categoryIdFor(_selectedTab, categoryCubit.state.categories);
+    await productCubit.fetchProducts(categoryId: categoryId);
   }
 
   @override
@@ -81,22 +114,20 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      body: BlocListener<CategoryCubit, CategoryState>(
-        listenWhen: (previous, current) =>
-            previous.selectedCategoryId != current.selectedCategoryId,
-        listener: (context, state) {
-          context
-              .read<ProductCubit>()
-              .fetchProducts(categoryId: state.selectedCategoryId);
-        },
-        child: Column(
-          children: [
-            const SizedBox(height: 8),
-            const CategoryChipsBar(),
-            const SizedBox(height: 8),
-            Expanded(child: ProductGrid(onRefresh: _refresh)),
-          ],
-        ),
+      body: Column(
+        children: [
+          const SizedBox(height: 12),
+          const PromoBanner(),
+          const SizedBox(height: 12),
+          HomeTabBar(selected: _selectedTab, onSelected: _onTabSelected),
+          const Divider(height: 1),
+          Expanded(
+            child: ProductGrid(
+              onRefresh: _refresh,
+              filter: _selectedTab == HomeTab.sale ? (p) => p.isOnSale : null,
+            ),
+          ),
+        ],
       ),
     );
   }

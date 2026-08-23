@@ -27,13 +27,4 @@ class CategoryCubit extends Cubit<CategoryState> {
       ),
     );
   }
-
-  /// Selecting the same category again clears the filter (toggle behavior).
-  void selectCategory(String? categoryId) {
-    if (categoryId == null || categoryId == state.selectedCategoryId) {
-      emit(state.copyWith(clearSelectedCategory: true));
-    } else {
-      emit(state.copyWith(selectedCategoryId: categoryId));
-    }
-  }
 }

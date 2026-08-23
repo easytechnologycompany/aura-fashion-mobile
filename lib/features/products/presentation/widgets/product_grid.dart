@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../domain/entities/product_entity.dart';
 import '../cubit/product_cubit.dart';
 import '../pages/product_detail_screen.dart';
 import 'product_card.dart';
@@ -8,7 +9,11 @@ import 'product_card.dart';
 class ProductGrid extends StatelessWidget {
   final Future<void> Function() onRefresh;
 
-  const ProductGrid({super.key, required this.onRefresh});
+  /// Optional client-side filter applied on top of the fetched list, e.g.
+  /// restricting the grid to on-sale items without a separate API call.
+  final bool Function(ProductEntity product)? filter;
+
+  const ProductGrid({super.key, required this.onRefresh, this.filter});
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +43,10 @@ class ProductGrid extends StatelessWidget {
               ),
             );
           case ProductStatus.success:
-            if (state.products.isEmpty) {
+            final products = filter == null
+                ? state.products
+                : state.products.where(filter!).toList();
+            if (products.isEmpty) {
               return Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -64,9 +72,9 @@ class ProductGrid extends StatelessWidget {
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
                 ),
-                itemCount: state.products.length,
+                itemCount: products.length,
                 itemBuilder: (context, index) {
-                  final product = state.products[index];
+                  final product = products[index];
                   return ProductCard(
                     product: product,
                     onTap: () => Navigator.of(context).push(
