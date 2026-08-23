@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_theme.dart';
-import '../../../products/presentation/pages/product_list_page.dart';
+import '../../../home/presentation/pages/home_screen.dart';
 import '../cubit/auth_cubit.dart';
 import 'register_screen.dart';
 
@@ -34,7 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
           listener: (context, state) {
             if (state.status == AuthStatus.authenticated) {
               Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => const ProductListPage()),
+                MaterialPageRoute(builder: (_) => const HomeScreen()),
               );
             } else if (state.status == AuthStatus.failure) {
               ScaffoldMessenger.of(context).showSnackBar(

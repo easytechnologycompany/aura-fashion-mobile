@@ -23,6 +23,12 @@ import '../../features/products/domain/usecases/get_product_by_id_usecase.dart';
 import '../../features/products/domain/usecases/get_products_usecase.dart';
 import '../../features/products/presentation/cubit/product_cubit.dart';
 
+import '../../features/categories/data/datasources/category_remote_data_source.dart';
+import '../../features/categories/data/repositories/category_repository_impl.dart';
+import '../../features/categories/domain/repositories/category_repository.dart';
+import '../../features/categories/domain/usecases/get_categories_usecase.dart';
+import '../../features/categories/presentation/cubit/category_cubit.dart';
+
 final sl = GetIt.instance;
 
 /// Registers every dependency used across the app. Call once from `main()`
@@ -75,4 +81,14 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton(() => GetProductsUseCase(sl()));
   sl.registerLazySingleton(() => GetProductByIdUseCase(sl()));
   sl.registerFactory(() => ProductCubit(getProductsUseCase: sl()));
+
+  // ----- Categories feature -----
+  sl.registerLazySingleton<CategoryRemoteDataSource>(
+    () => CategoryRemoteDataSourceImpl(sl<DioClient>().dio),
+  );
+  sl.registerLazySingleton<CategoryRepository>(
+    () => CategoryRepositoryImpl(remoteDataSource: sl(), networkInfo: sl()),
+  );
+  sl.registerLazySingleton(() => GetCategoriesUseCase(sl()));
+  sl.registerFactory(() => CategoryCubit(getCategoriesUseCase: sl()));
 }

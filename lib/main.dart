@@ -5,8 +5,9 @@ import 'core/di/injection_container.dart' as di;
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/cubit/auth_cubit.dart';
 import 'features/auth/presentation/pages/login_screen.dart';
+import 'features/categories/presentation/cubit/category_cubit.dart';
+import 'features/home/presentation/pages/home_screen.dart';
 import 'features/products/presentation/cubit/product_cubit.dart';
-import 'features/products/presentation/pages/product_list_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,6 +26,7 @@ class AuraFashionApp extends StatelessWidget {
           create: (_) => di.sl<AuthCubit>()..checkAuthStatus(),
         ),
         BlocProvider<ProductCubit>(create: (_) => di.sl<ProductCubit>()),
+        BlocProvider<CategoryCubit>(create: (_) => di.sl<CategoryCubit>()),
       ],
       child: MaterialApp(
         title: 'Aura Fashion',
@@ -51,7 +53,7 @@ class _RootGate extends StatelessWidget {
               body: Center(child: CircularProgressIndicator()),
             );
           case AuthStatus.authenticated:
-            return const ProductListPage();
+            return const HomeScreen();
           case AuthStatus.unauthenticated:
           case AuthStatus.failure:
             return const LoginScreen();
